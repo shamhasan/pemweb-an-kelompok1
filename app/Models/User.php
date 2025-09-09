@@ -47,4 +47,12 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+    public function consultationsAsUser()
+    {
+        return $this->hasMany(Consultation::class, 'user_id');
+    }
+    public function consultationsAsNutritionist()
+    {
+        return $this->hasMany(Consultation::class, 'nutritionist_id');
+    }
 }

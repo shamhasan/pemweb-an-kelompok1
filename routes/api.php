@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ArticleController;
+use App\Http\Controllers\Api\ConsultationController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -27,7 +28,8 @@ Route::get('/article-categories', [ArticleController::class, 'getCategories']);
 
 // Rute yang memerlukan autentikasi (khusus admin)
 Route::middleware('auth:sanctum')->group(function () {
-    Route::post('/admin/articles', [ArticleController::class, 'store']);
-    Route::put('/admin/articles/{article}', [ArticleController::class, 'update']); // PUT untuk update keseluruhan
-    Route::delete('/admin/articles/{article}', [ArticleController::class, 'destroy']);
+    Route::get('/consultations', [ConsultationController::class, 'index']); // Daftar konsultasi user
+    Route::post('/consultations', [ConsultationController::class, 'store']); // Memulai konsultasi baru
+    Route::get('/consultations/{consultation}', [ConsultationController::class, 'show']); // Lihat detail & pesan dalam 1 konsultasi
+    Route::post('/consultations/{consultation}/messages', [ConsultationController::class, 'sendMessage']); // Kirim pesan
 });
