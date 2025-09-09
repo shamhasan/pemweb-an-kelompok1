@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use App\Models\NutritionLog; // <-- Tambahkan ini
 
 
 class User extends Authenticatable
@@ -48,6 +49,11 @@ class User extends Authenticatable
         ];
     }
 
+    public function nutritionLogs()
+    {
+        return $this->hasMany(NutritionLog::class);
+    }
+    
     public function recommendations()
     {
         return $this->hasMany(Recommendation::class);
