@@ -1,21 +1,43 @@
 <?php
 
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\Api\RecommendationController; // Pastikan ini ada
+use App\Http\Controllers\ArticleController;
+use App\Http\Controllers\Api\RecommendationController; 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-// Endpoint publik (tidak butuh token)
+// =======================================================
+// == RUTE PUBLIK (BISA DIAKSES TANPA LOGIN)
+// =======================================================
+
+// Autentikasi
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
-// Endpoint yang butuh autentikasi
+// Artikel (Publik)
+Route::get('/articles', [ArticleController::class, 'index']);
+Route::get('/articles/{article}', [ArticleController::class, 'show']);
+Route::get('/article-categories', [ArticleController::class, 'getCategories']);
+
+
+// =======================================================
+// == RUTE TERPROTEKSI (WAJIB LOGIN & PAKAI TOKEN)
+// =======================================================
+
 Route::middleware('auth:sanctum')->group(function () {
-    // Route user
+    
+    // Profil Pengguna
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
+    // (Anda bisa tambahkan logout dan rute profil lainnya di sini)
 
-    // Rute untuk Fitur Rekomendasi
+    // Artikel (Admin)
+    Route::post('/admin/articles', [ArticleController::class, 'store']);
+    Route::put('/admin/articles/{article}', [ArticleController::class, 'update']);
+    Route::delete('/admin/articles/{article}', [ArticleController::class, 'destroy']);
+
+    // Rekomendasi (User) <-- DITAMBAHKAN DI SINI
     Route::get('/recommendations', [RecommendationController::class, 'index']);
+
 });
