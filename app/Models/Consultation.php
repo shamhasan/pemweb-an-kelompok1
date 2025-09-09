@@ -9,7 +9,7 @@ class Consultation extends Model
 {
     //
     use hasFactory;
-    
+
     public function user()
     {
         return $this->belongsTo(User::class);

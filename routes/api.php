@@ -26,13 +26,13 @@ Route::get('/article-categories', [ArticleController::class, 'getCategories']);
 // =======================================================
 
 Route::middleware('auth:sanctum')->group(function () {
-    
+
     // Profil Pengguna & Logout
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
     Route::post('/logout', [AuthController::class, 'logout']);
-    
+
     // Artikel (Admin)
     Route::post('/admin/articles', [ArticleController::class, 'store']);
     Route::put('/admin/articles/{article}', [ArticleController::class, 'update']);
@@ -43,5 +43,4 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Rekomendasi (User) 
     Route::get('/recommendations', [RecommendationController::class, 'index']);
-
 });
