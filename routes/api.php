@@ -3,7 +3,8 @@
 use App\Http\Controllers\AuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\ArticleController;
+use App\Http\Controllers\Api\ArticleController;
+use App\Http\Controllers\Api\MedicalRecordController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -30,4 +31,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/admin/articles', [ArticleController::class, 'store']);
     Route::put('/admin/articles/{article}', [ArticleController::class, 'update']); // PUT untuk update keseluruhan
     Route::delete('/admin/articles/{article}', [ArticleController::class, 'destroy']);
+    Route::apiResource('medical-records', MedicalRecordController::class);
 });
