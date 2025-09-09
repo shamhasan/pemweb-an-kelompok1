@@ -1,33 +1,42 @@
 <?php
 
-use App\Http\Controllers\AuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ArticleController;
+use App\Http\Controllers\Api\NutritionLogController;
 
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
+// =======================================================
+// == RUTE PUBLIK (BISA DIAKSES TANPA LOGIN)
+// =======================================================
 
-// Endpoint publik (tidak butuh token)
+// Autentikasi
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
-    
-// Endpoint yang butuh autentikasi (contoh)
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
-});
-
-// --- Rute Artikel ---
-// Rute publik untuk semua pengguna
+// Artikel (Publik)
 Route::get('/articles', [ArticleController::class, 'index']);
 Route::get('/articles/{article}', [ArticleController::class, 'show']);
 Route::get('/article-categories', [ArticleController::class, 'getCategories']);
 
-// Rute yang memerlukan autentikasi (khusus admin)
+
+// =======================================================
+// == RUTE TERPROTEKSI (WAJIB LOGIN & PAKAI TOKEN)
+// =======================================================
+
 Route::middleware('auth:sanctum')->group(function () {
+    
+    // Profil Pengguna
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    });
+    
+    // Artikel (Admin)
     Route::post('/admin/articles', [ArticleController::class, 'store']);
-    Route::put('/admin/articles/{article}', [ArticleController::class, 'update']); // PUT untuk update keseluruhan
+    Route::put('/admin/articles/{article}', [ArticleController::class, 'update']);
     Route::delete('/admin/articles/{article}', [ArticleController::class, 'destroy']);
+
+    // Progress Nutrisi (User)
+    Route::apiResource('nutrition-logs', NutritionLogController::class);
+
 });
