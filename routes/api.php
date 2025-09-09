@@ -2,7 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ArticleController;
-use App\Http\Controllers\Api\RecommendationController; 
+use App\Http\Controllers\Api\RecommendationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -25,19 +25,18 @@ Route::get('/article-categories', [ArticleController::class, 'getCategories']);
 // =======================================================
 
 Route::middleware('auth:sanctum')->group(function () {
-    
+
     // Profil Pengguna
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
-    // (Anda bisa tambahkan logout dan rute profil lainnya di sini)
 
     // Artikel (Admin)
     Route::post('/admin/articles', [ArticleController::class, 'store']);
     Route::put('/admin/articles/{article}', [ArticleController::class, 'update']);
     Route::delete('/admin/articles/{article}', [ArticleController::class, 'destroy']);
 
-    // Rekomendasi (User) <-- DITAMBAHKAN DI SINI
+    // Rekomendasi (User)
     Route::get('/recommendations', [RecommendationController::class, 'index']);
 
 });
