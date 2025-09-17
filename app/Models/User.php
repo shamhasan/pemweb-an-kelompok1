@@ -7,7 +7,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
-use App\Models\NutritionLog; // <-- Tambahkan ini
+use App\Models\NutritionLog;
+use App\Models\Recommendation;
+use App\Models\Consultation;
+use App\Models\MedicalRecord;
 
 
 class User extends Authenticatable
@@ -57,5 +60,15 @@ class User extends Authenticatable
     public function recommendations()
     {
         return $this->hasMany(Recommendation::class);
+    }
+
+    public function consultations()
+    {
+        return $this->hasMany(Consultation::class);
+    }
+
+    public function medicalRecords()
+    {
+        return $this->hasMany(MedicalRecord::class);
     }
 }

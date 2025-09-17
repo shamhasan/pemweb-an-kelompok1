@@ -9,20 +9,27 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    // database/migrations/xxxx_xx_xx_xxxxxx_create_article_categories_table.php
     public function up(): void
     {
-        Schema::create('article_categories', function (Blueprint $table) {
+        Schema::create('feedbacks', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->unique();
+
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+
+            $table->unsignedTinyInteger('rating');
+
+            // komentar boleh kosong
+            $table->text('comment')->nullable();
+
             $table->timestamps();
         });
     }
+
     /**
      * Reverse the migrations.
      */
     public function down(): void
     {
-        Schema::dropIfExists('article_categories');
+        Schema::dropIfExists('feedbacks');
     }
 };

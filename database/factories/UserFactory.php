@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -23,12 +24,25 @@ class UserFactory extends Factory
      */
     public function definition(): array
     {
+        $dob = $this->faker->dateTimeBetween('-60 years', '-18 years');
+        $gender = $this->faker->randomElement(['male', 'female']);
+
+
+        $height = $this->faker->numberBetween(145, 195);
+        $weight = $this->faker->randomFloat(1, 40, 120);
+
         return [
-            'name' => fake()->name(),
-            'email' => fake()->unique()->safeEmail(),
-            'email_verified_at' => now(),
-            'password' => static::$password ??= Hash::make('password'),
-            'remember_token' => Str::random(10),
+            'name'         => $this->faker->name($gender === 'male' ? 'male' : 'female'),
+            'email'        => $this->faker->unique()->safeEmail(),
+
+            'password'     => static::$password ??= Hash::make('password'),
+            'date_of_birth' => Carbon::instance($dob)->toDateString(),
+            'gender'       => $gender,
+            'height_cm'    => $height,
+            'weight_kg'    => $weight,
+            'role'         => 'user',
+            'created_at'   => $this->faker->dateTimeThisYear(),
+            'updated_at'   => $this->faker->dateTimeThisYear(),
         ];
     }
 
@@ -37,8 +51,24 @@ class UserFactory extends Factory
      */
     public function unverified(): static
     {
-        return $this->state(fn (array $attributes) => [
+        return $this->state(fn(array $attributes) => [
             'email_verified_at' => null,
         ]);
+    }
+
+    public function admin(): self
+    {
+        return $this->state(fn() => ['role' => 'admin']);
+    }
+
+    /** State: pria/wanita (opsional) */
+    public function male(): self
+    {
+        return $this->state(fn() => ['gender' => 'male']);
+    }
+
+    public function female(): self
+    {
+        return $this->state(fn() => ['gender' => 'femal']);
     }
 }

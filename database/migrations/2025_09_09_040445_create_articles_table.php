@@ -9,16 +9,15 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    // database/migrations/xxxx_xx_xx_xxxxxx_create_articles_table.php
     public function up(): void
     {
         Schema::create('articles', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('author_id')->constrained('users'); // Foreign key ke tabel users
-            $table->foreignId('category_id')->constrained('article_categories'); // Foreign key ke tabel article_categories
+            $table->foreignId('author_id')->constrained('users')->onDelete('cascade'); // Foreign key ke tabel users
+            $table->foreignId('category_id')->constrained('article_categories')->onDelete('cascade'); // Foreign key ke tabel article_categories
             $table->string('title');
             $table->longText('content');
-            $table->string('image_url')->nullable(); // URL gambar, boleh kosong
+            $table->string('image_url')->nullable();
             $table->enum('status', ['published', 'draft'])->default('draft');
             $table->timestamps();
         });

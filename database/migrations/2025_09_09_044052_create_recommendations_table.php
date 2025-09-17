@@ -9,19 +9,22 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    // database/migrations/xxxx_xx_xx_xxxxxx_create_recommendations_table.php
     public function up(): void
     {
         Schema::create('recommendations', function (Blueprint $table) {
-            $table->id(); 
-            $table->foreignId('user_id')->constrained()->onDelete('cascade'); 
-            $table->enum('type', ['artikel', 'aktivitas', 'nutrisi']); 
-            $table->string('title');
-            $table->text('description'); 
-            $table->string('related_url')->nullable(); 
-            $table->timestamps(); 
-        });
+            $table->id();
 
+            // foreign key ke user
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+
+            // info terkait recomendations
+            $table->string('title');
+            $table->text('description');
+            $table->enum('type', ['artikel', 'aktivitas', 'nutrisi']);
+            $table->string('related_url')->nullable();
+
+            $table->timestamps();
+        });
     }
 
     /**
@@ -29,6 +32,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('recommendations');
+        Schema::dropIfExists('recomendations');
     }
 };
