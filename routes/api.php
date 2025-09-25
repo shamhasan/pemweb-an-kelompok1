@@ -37,6 +37,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/admin/articles', [ArticleController::class, 'store']);
     Route::put('/admin/articles/{article}', [ArticleController::class, 'update']);
     Route::delete('/admin/articles/{article}', [ArticleController::class, 'destroy']);
+    Route::post('/feedback', [FeedbackController::class, 'store']);
+    
+    // Endpoint khusus untuk admin
+    Route::get('/admin/feedback', [FeedbackController::class, 'index']);
+    Route::delete('/admin/feedback/{feedback}', [FeedbackController::class, 'destroy']);
 
     // Progress Nutrisi (User)
     Route::apiResource('nutrition-logs', NutritionLogController::class);
