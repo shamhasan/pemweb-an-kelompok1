@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\ArticleController;
 use App\Http\Controllers\Api\NutritionLogController;
 use App\Http\Controllers\Api\FeedbackController;
 use App\Http\Controllers\Api\RecommendationController; // Ditambahkan
+use App\Http\Controllers\Api\MedicalRecordController;
 
 // =======================================================
 // == RUTE PUBLIK (BISA DIAKSES TANPA LOGIN)
@@ -49,4 +50,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Rekomendasi (User) 
     Route::get('/recommendations', [RecommendationController::class, 'index']);
+
+    Route::apiResource('medical-records', MedicalRecordController::class);
 });
