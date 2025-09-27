@@ -9,10 +9,18 @@ class NutritionLog extends Model
 {
     use HasFactory;
 
+    protected $table = 'nutrition_logs';
+
     // Kolom yang boleh diisi
     protected $fillable = [
-        'user_id', 'food_name', 'calories', 'protein_g',
-        'carbs_g', 'fat_g', 'meal_type', 'consumed_at'
+        'user_id',
+        'food_name',
+        'calories',
+        'protein_g',
+        'carbs_g',
+        'fat_g',
+        'meal_type',
+        'consumed_at'
     ];
 
     // Casting untuk memastikan 'consumed_at' selalu menjadi objek Carbon (tanggal/waktu)
