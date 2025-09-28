@@ -15,9 +15,9 @@ class ArticleController extends Controller
     public function index()
     {
         $articles = Article::where('status', 'published')
-                            ->with(['category', 'author']) // Eager loading untuk relasi
-                            ->latest() // Urutkan dari yang terbaru
-                            ->paginate(10); // Paginasi
+            ->with(['category', 'author']) // Eager loading untuk relasi
+            ->latest() // Urutkan dari yang terbaru
+            ->paginate(10); // Paginasi
         return response()->json($articles);
     }
 

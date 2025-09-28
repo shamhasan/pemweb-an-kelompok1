@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\NutritionLog;
 use Illuminate\Http\Request;
 
+
 class NutritionLogController extends Controller
 {
     // Menampilkan semua catatan nutrisi milik user yang login

@@ -13,9 +13,9 @@ class RecommendationController extends Controller
     public function index(Request $request)
     {
         $recommendations = $request->user()
-                                  ->recommendations()
-                                  ->latest() // Diurutkan dari yang terbaru
-                                  ->paginate(10); // Paginasi
+            ->recommendations()
+            ->latest() // Diurutkan dari yang terbaru
+            ->paginate(10); // Paginasi
 
         return response()->json($recommendations);
     }

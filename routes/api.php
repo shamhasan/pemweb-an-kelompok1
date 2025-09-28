@@ -3,9 +3,11 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\ArticleController;
+use App\Http\Controllers\Api\ArticleController;
 use App\Http\Controllers\Api\NutritionLogController;
+use App\Http\Controllers\Api\FeedbackController;
 use App\Http\Controllers\Api\RecommendationController; // Ditambahkan
+use App\Http\Controllers\Api\MedicalRecordController;
 
 // =======================================================
 // == RUTE PUBLIK (BISA DIAKSES TANPA LOGIN)
@@ -37,10 +39,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/admin/articles', [ArticleController::class, 'store']);
     Route::put('/admin/articles/{article}', [ArticleController::class, 'update']);
     Route::delete('/admin/articles/{article}', [ArticleController::class, 'destroy']);
+    Route::post('/feedback', [FeedbackController::class, 'store']);
+
+    // Endpoint khusus untuk admin
+    Route::get('/admin/feedback', [FeedbackController::class, 'index']);
+    Route::delete('/admin/feedback/{feedback}', [FeedbackController::class, 'destroy']);
 
     // Progress Nutrisi (User)
     Route::apiResource('nutrition-logs', NutritionLogController::class);
 
     // Rekomendasi (User) 
     Route::get('/recommendations', [RecommendationController::class, 'index']);
+
+    Route::apiResource('medical-records', MedicalRecordController::class);
 });

@@ -20,6 +20,10 @@ class AuthController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
+            'date_of_birth' => 'required|date|before_or_equal:today',
+            'gender' => 'required|in:male,female',
+            'height_cm' => 'required|integer|min:50|max:300',
+            'weight_kg' => 'required|numeric|min:20|max:500',
         ]);
 
         if ($validator->fails()) {
@@ -31,6 +35,11 @@ class AuthController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'date_of_birth' => $request->date_of_birth,
+            'gender' => $request->gender,
+            'height_cm' => $request->height_cm,
+            'weight_kg' => $request->weight_kg,
+            'role' => 'user', // PENTING: Set role
         ]);
 
         // Buat token untuk user baru
