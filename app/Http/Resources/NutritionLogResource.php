@@ -14,6 +14,15 @@ class NutritionLogResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        return parent::toArray($request);
-    }
+        return [
+            'id'          => $this->id,
+            'food_name'   => $this->food_name,
+            'calories'    => $this->calories,
+            'protein_g'   => (float) $this->protein_g,
+            'carbs_g'     => (float) $this->carbs_g,
+            'fat_g'       => (float) $this->fat_g,
+            'meal_type'   => $this->meal_type,
+            'consumed_at' => $this->consumed_at->toDateTimeString(),
+            'created_at'  => $this->created_at->toDateTimeString(),
+        ];    }
 }
