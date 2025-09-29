@@ -5,15 +5,16 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Consultation;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class ConsultationController extends Controller
 {
     // Helper Functions
+
     private function getAuthenticatedUserId(Request $request): int
     {
         $id = $request->user()?->id;
-        if (!$id) return 1;
-        // if (!$id) abort(401, 'User not authenticated');
+        if (!$id) abort(401, 'User not authenticated');
         return (int) $id;
     }
 
@@ -25,45 +26,66 @@ class ConsultationController extends Controller
 
     public function index(Request $request)
     {
+        $authId  = $this->getAuthenticatedUserId($request);
+
         // Validasi query param sederhana
-        $request->validate([
-            'per_page' => 'sometimes|integer|min:1|max:100',
+        $v = Validator::make($request->all(), [
             'status'   => 'sometimes|in:aktif,selesai',
+        ], [
+            'status.in' => 'Status tidak valid',
         ]);
 
-        $authId  = $this->getAuthenticatedUserId($request);
-        $perPage = min(max($request->integer('per_page', 15), 1), 100);
+        if ($v->fails()) {
+            return response()->json([
+                'message' => 'Validasi gagal',
+                'errors'  => $v->errors(),
+            ], 422);
+        }
+
+        $validated = $v->validated();
+
+        $limit = max(1, min(50, 100));
 
         $consultations = Consultation::query()
             ->where('user_id', $authId)
             ->when(
-                $request->filled('status'),
-                fn($q) =>
-                $q->where('status', $request->string('status')->toString())
+                isset($validated['status']),
+                fn($q) => $q->where('status', $validated['status'])
             )
             ->with('user')
             ->orderByDesc('started_at')
             ->orderByDesc('id')
-            ->paginate($perPage);
+            ->limit($limit)
+            ->get();
 
-        return response()->json($consultations);
+        return response()->json([
+            'status'  => 'success',
+            'message' => $consultations->isEmpty() ? 'Data konsultasi tidak ditemukan' : 'Data konsultasi berhasil diambil',
+            'data'    => $consultations,
+        ]);
     }
 
     public function store(Request $request)
     {
+        $userId = $this->getAuthenticatedUserId($request);
 
-        $request->validate([
+        $v = Validator::make($request->all(), [
             'user_id'    => 'sometimes|required|integer|exists:users,id',
             'status'     => 'sometimes|required|string|in:aktif,selesai',
-            'started_at' => 'sometimes|required|date'
+            'started_at' => 'sometimes|required|date',
         ], [
-            'user_id.exists' => 'User tidak ditemukan',
-            'user_id.integer' => 'User ID harus berupa angka',
-            'status.in'      => 'Status tidak valid',
-            'started_at.date' => 'Tanggal mulai tidak valid',
+            'user_id.exists'   => 'User tidak ditemukan',
+            'user_id.integer'  => 'User ID harus berupa angka',
+            'status.in'        => 'Status tidak valid',
+            'started_at.date'  => 'Tanggal mulai tidak valid',
         ]);
 
-        $userId = $this->getAuthenticatedUserId($request);
+        if ($v->fails()) {
+            return response()->json([
+                'message' => 'Validasi gagal',
+                'errors'  => $v->errors(),
+            ], 422);
+        }
 
         $consultation = Consultation::create([
             'user_id'    => $userId,
@@ -71,7 +93,11 @@ class ConsultationController extends Controller
             'started_at' => now(),
         ]);
 
-        return response()->json($consultation->load('user'), 201);
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Konsultasi berhasil dibuat',
+            'data'    => $consultation->load('user'),
+        ], 201);
     }
 
 
@@ -79,43 +105,55 @@ class ConsultationController extends Controller
     {
         $this->ensureOwner($request, $consultation);
 
-        // Untuk query param pagination
-        $request->validate(rules: [
-            'per_page' => 'sometimes|integer|min:1|max:100',
+        $v = Validator::make($request->all(), [
+            'limit' => 'sometimes|integer|min:1|max:200',
         ]);
-
-        $perPage = min(max($request->integer('per_page', 50), 1), 100);
+        if ($v->fails()) {
+            return response()->json([
+                'message' => 'Validasi gagal',
+                'errors'  => $v->errors(),
+            ], 422);
+        }
+        $limit = (int)($v->validated()['limit'] ?? 100);
 
         $consultation->load('user');
 
         $messages = $consultation->messages()
             ->orderBy('sent_at', 'asc')
             ->orderBy('id', 'asc')
-            ->paginate($perPage);
+            ->limit($limit)
+            ->get();
 
-        return response()->json(
-            [
-                'data'      => $consultation,
-                'messages'  => $messages,
-            ]
-        );
+        return response()->json([
+            'status'  => 'success',
+            'message' => $messages->isEmpty() ? 'Tidak ada pesan' : 'Detail konsultasi berhasil diambil',
+            'data'    => [
+                'consultation' => $consultation,
+                'messages'     => $messages,
+            ],
+        ]);
     }
-
 
     public function update(Request $request, Consultation $consultation)
     {
-
         $this->ensureOwner($request, $consultation);
 
-        $request->validate([
+        $v = Validator::make($request->all(), [
             'started_at' => 'sometimes|date|before_or_equal:now',
-            'status'    => 'sometimes|required|in:aktif,selesai',
-            'ended_at'  => 'prohibited', // server-controlled
+            'status'     => 'sometimes|required|in:aktif,selesai',
+            'ended_at'   => 'prohibited', // server-controlled
         ], [
-            'status.in'     => 'Status tidak valid',
-            'ended_at.date' => 'Tanggal selesai tidak valid',
-            'ended_at.prohibited' => 'Field ended_at dikendalikan oleh server.',
+            'status.in'              => 'Status tidak valid',
+            'ended_at.prohibited'    => 'Field ended_at dikendalikan oleh server.',
+            'started_at.before_or_equal' => 'Tanggal mulai tidak boleh di masa depan.',
         ]);
+
+        if ($v->fails()) {
+            return response()->json([
+                'message' => 'Validasi gagal',
+                'errors'  => $v->errors(),
+            ], 422);
+        }
 
         $changes = [];
 
@@ -128,12 +166,13 @@ class ConsultationController extends Controller
 
             if ($target === 'selesai') {
                 if ($consultation->status !== 'selesai') {
-                    $changes['status'] = 'selesai';
+                    $changes['status']   = 'selesai';
                     $changes['ended_at'] = now();
                 }
             } elseif ($target === 'aktif') {
                 if ($consultation->status === 'selesai') {
                     return response()->json([
+                        'status'  => 'error',
                         'message' => 'Konsultasi yang sudah selesai tidak bisa dibuka kembali.'
                     ], 409);
                 }
@@ -141,16 +180,27 @@ class ConsultationController extends Controller
         }
 
         if (empty($changes)) {
-            return response()->json(['message' => 'Tidak ada perubahan'], 409);
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Tidak ada perubahan'
+            ], 409);
         }
 
         try {
             $consultation->update($changes);
-        } catch (\Exception $e) {
-            return response()->json(['message' => 'Terjadi kesalahan saat memperbarui konsultasi.', 'error' => $e->getMessage()], 500);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Terjadi kesalahan saat memperbarui konsultasi.',
+                'error'   => config('app.debug') ? $e->getMessage() : 'INTERNAL_ERROR',
+            ], 500);
         }
 
-        return response()->json($consultation->fresh()->load('user'));
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Konsultasi berhasil diperbarui.',
+            'data'    => $consultation->fresh()->load('user'),
+        ]);
     }
 
     public function destroy(Request $request, Consultation $consultation)
@@ -159,7 +209,7 @@ class ConsultationController extends Controller
 
         $consultation->delete();
 
-        return response()->json(['message' => 'Consultation deleted successfully'], 204);
+        return response()->noContent();
     }
 
     // Ini untuk menampilkan pesannya juga
@@ -173,6 +223,9 @@ class ConsultationController extends Controller
             ->orderByDesc('started_at')
             ->get();
 
-        return response()->json($consultations);
+        return response()->json([
+            'message' => 'Konsultasi aktif berhasil diambil',
+            'data' => $consultations
+        ]);
     }
 }

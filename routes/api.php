@@ -70,6 +70,4 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/messages/{message}', [MessageController::class, 'update']);
     Route::put('/messages/{message}', [MessageController::class, 'update']);
     Route::delete('/messages/{message}', [MessageController::class, 'destroy']);
-
-    Route::get('/consultations/{consultation}/messages', [MessageController::class, 'getConsultationMessages']);
 });

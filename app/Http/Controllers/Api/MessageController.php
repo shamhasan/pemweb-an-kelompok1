@@ -16,7 +16,7 @@ class MessageController extends Controller
     private function authId(Request $request): int
     {
         $id = $request->user()?->id;
-        if (!$id) return 1; // atau: abort(401, 'Unauthorized');
+        if (!$id) abort(401, 'User not authenticated');
         return (int) $id;
     }
 
@@ -30,46 +30,60 @@ class MessageController extends Controller
 
     public function index(Request $request)
     {
-        $request->validate([
-            'per_page'        => 'sometimes|integer|min:1|max:100',
-            'sender_type'     => 'sometimes|in:user,ai',
-            'after_id'        => 'sometimes|integer|min:1',
+        $v = Validator::make($request->all(), [
+            'limit'          => 'sometimes|integer|min:1|max:100',
+            'sender_type'    => 'sometimes|in:user,ai',
             'consultation_id' => 'sometimes|integer|exists:consultations,id',
         ]);
 
-        $authId  = $this->authId($request);
-        $perPage = min(max($request->integer('per_page', 50), 1), 100);
-        $consultationId = $request->integer('consultation_id');
+        if ($v->fails()) {
+            return response()->json([
+                'message' => 'Validasi gagal',
+                'errors'  => $v->errors(),
+            ], 422);
+        }
+        $validated = $v->validated();
 
-        if ($consultationId) {
-            Consultation::where('id', $consultationId)
+        $authId  = $this->authId($request);
+        $limit   = (int)($validated['limit'] ?? 50);
+        $cid     = isset($validated['consultation_id']) ? (int)$validated['consultation_id'] : null;
+
+        if ($cid) {
+            Consultation::where('id', $cid)
                 ->where('user_id', $authId)
+                ->select('id')
                 ->firstOrFail();
         }
 
-        $q = Message::query()
+        $messages = Message::query()
             ->when(
-                !$consultationId,
+                !$cid,
                 fn($q) =>
                 $q->whereHas('consultation', fn($c) => $c->where('user_id', $authId))
             )
-            ->when($consultationId, fn($q) => $q->where('consultation_id', $consultationId))
+            ->when($cid, fn($q) => $q->where('consultation_id', $cid))
             ->when(
-                $request->filled('sender_type'),
-                fn($q) =>
-                $q->where('sender_type', $request->string('sender_type')->toString())
+                isset($validated['sender_type']),
+                fn($q) => $q->where('sender_type', $validated['sender_type'])
             )
             ->with('consultation')
             ->orderBy('sent_at', 'asc')
-            ->orderBy('id', 'asc');
+            ->orderBy('id', 'asc')
+            ->limit($limit)
+            ->get();
 
-
-        return response()->json($q->paginate($perPage));
+        return response()->json([
+            'status'  => 'success',
+            'message' => $messages->isEmpty() ? 'Tidak ada pesan ditemukan' : 'Pesan berhasil diambil',
+            'data'    => $messages,
+        ], 200);
     }
 
     public function store(Request $request, GeminiClient $gemini)
     {
-        $request->validate([
+        $authId = $this->authId($request);
+
+        $v = Validator::make($request->all(), [
             'consultation_id' => 'required|integer|exists:consultations,id',
             'content'         => 'required|string|min:1|max:6000',
             'sender_type'     => 'sometimes|in:user',
@@ -80,9 +94,15 @@ class MessageController extends Controller
             'content.max'              => 'Pesan terlalu panjang (maksimal 6000 karakter)',
         ]);
 
-        $authId = $this->authId($request);
+        if ($v->fails()) {
+            return response()->json([
+                'message' => 'Validasi gagal',
+                'errors'  => $v->errors(),
+            ], 422);
+        }
+        $validated = $v->validated();
 
-        $consultation = Consultation::where('id', $request->integer('consultation_id'))
+        $consultation = Consultation::where('id', (int)$validated['consultation_id'])
             ->where('user_id', $authId)
             ->firstOrFail();
 
@@ -93,7 +113,7 @@ class MessageController extends Controller
         $userMsg = Message::create([
             'consultation_id' => $consultation->id,
             'sender_type'     => 'user',
-            'content'         => $request->string('content')->toString(),
+            'content'         => (string)$validated['content'],
             'sent_at'         => now(),
         ]);
 
@@ -115,9 +135,59 @@ class MessageController extends Controller
         }
 
         return response()->json([
-            'user_message'      => $userMsg->load('consultation'),
-            'assistant_message' => $assistantMsg->load('consultation'),
+            'status'  => 'success',
+            'message' => 'Pesan berhasil dikirim',
+            'data'    => [
+                'user_message'      => $userMsg->load('consultation'),
+                'assistant_message' => $assistantMsg->load('consultation'),
+            ]
         ], 201);
+    }
+
+    public function show(Request $request, Message $message)
+    {
+        $this->ensureOwner($request, $message->consultation);
+        return response()->json([
+            'message' => 'Pesan berhasil diambil',
+            'data'    => $message->load('consultation.user')
+        ]);
+    }
+
+    public function update(Request $request, Message $message)
+    {
+        $this->ensureOwner($request, $message->consultation);
+
+        $v = Validator::make($request->all(), [
+            'content'     => 'required|string|min:1|max:2000',
+            'sent_at'     => 'sometimes|date',
+            'sender_type' => 'prohibited',
+        ], [
+            'sender_type.prohibited' => 'Tipe pengirim tidak bisa diubah',
+        ]);
+
+        if ($v->fails()) {
+            return response()->json([
+                'message' => 'Validasi gagal',
+                'errors'  => $v->errors(),
+            ], 422);
+        }
+
+        $validated = $v->validated();
+
+        $message->update($validated);
+
+        return response()->json([
+            'message' => 'Pesan berhasil diperbarui',
+            'data' => $message
+        ]);
+    }
+
+    public function destroy(Request $request, Message $message)
+    {
+        $this->ensureOwner($request, $message->consultation);
+        $message->delete();
+
+        return response()->noContent();
     }
 
     private function generateAIResponse(Consultation $consultation, GeminiClient $gemini): Message
@@ -150,63 +220,5 @@ class MessageController extends Controller
             'content'         => $content,
             'sent_at'         => now(),
         ]);
-    }
-
-    public function show(Request $request, Message $message)
-    {
-        $this->ensureOwner($request, $message->consultation);
-        return response()->json($message->load('consultation.user'));
-    }
-
-    public function update(Request $request, Message $message)
-    {
-        $this->ensureOwner($request, $message->consultation);
-
-        $v = Validator::make($request->all(), [
-            'content'     => 'required|string|min:1|max:2000',
-            'sent_at'     => 'sometimes|date',
-            'sender_type' => 'prohibited',
-        ], [
-            'sender_type.prohibited' => 'Tipe pengirim tidak bisa diubah',
-        ]);
-
-        if ($v->fails()) {
-            return response()->json([
-                'message' => 'Validasi gagal',
-                'errors'  => $v->errors(),
-            ], 422);
-        }
-
-        $validated = $v->validated();
-
-        $message->update($validated);
-
-        return response()->json($message);
-    }
-
-    public function destroy(Request $request, Message $message)
-    {
-        $this->ensureOwner($request, $message->consultation);
-        $message->delete();
-
-        return response()->noContent(); // 204
-    }
-
-    public function getConsultationMessages(Request $request, Consultation $consultation)
-    {
-        $this->ensureOwner($request, $consultation);
-
-        $request->validate([
-            'per_page' => 'sometimes|integer|min:1|max:100',
-        ]);
-
-        $perPage = min(max($request->integer('per_page', 50), 1), 100);
-
-        $messages = $consultation->messages()
-            ->orderBy('sent_at', 'asc')
-            ->orderBy('id', 'asc')
-            ->paginate($perPage);
-
-        return response()->json($messages);
     }
 }
