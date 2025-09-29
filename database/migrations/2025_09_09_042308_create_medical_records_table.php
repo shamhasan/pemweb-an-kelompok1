@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('medical_records', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade'); // Foreign key ke tabel users
-            $table->enum('record_type', ['alergi', 'penyakit_kronis', 'vaksinasi', 'operasi']); // Tipe catatan, contoh: 'alergi', 'penyakit', 'operasi'
+            $table->enum('record_type', ['alergi', 'penyakit', 'vaksinasi', 'operasi']); // Tipe catatan, contoh: 'alergi', 'penyakit', 'operasi'
             $table->string('name'); // Nama catatan, contoh: 'Debu', 'Asma'
             $table->text('description')->nullable();
             $table->timestamp('recorded_at');

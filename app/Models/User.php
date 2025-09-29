@@ -11,9 +11,10 @@ use App\Models\NutritionLog;
 use App\Models\Recommendation;
 use App\Models\Consultation;
 use App\Models\MedicalRecord;
+use Tymon\JWTAuth\Contracts\JWTSubject;
 
 
-class User extends Authenticatable
+class User extends Authenticatable implements JWTSubject
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, HasApiTokens;
@@ -77,4 +78,12 @@ class User extends Authenticatable
     {
         return $this->hasMany(MedicalRecord::class);
     }
+    public function getJWTIdentifier()
+    {
+        return $this->getKey();
+    }
+    public function getJWTCustomClaims()
+    {
+        return [];
+    }   
 }

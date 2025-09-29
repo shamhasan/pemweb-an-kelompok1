@@ -20,7 +20,7 @@ class MedicalRecordFactory extends Factory
     {
         return [
             'user_id' => User::factory(),
-            'record_type' => $this->faker->randomElement(['alergi', 'penyakit_kronis', 'vaksinasi', 'operasi']),
+            'record_type' => $this->faker->randomElement(['alergi', 'penyakit', 'vaksinasi', 'operasi']),
             'name' => $this->faker->word(),
             'description' => $this->faker->sentence(),
             'recorded_at' => Carbon::instance($this->faker->dateTimeThisYear()),

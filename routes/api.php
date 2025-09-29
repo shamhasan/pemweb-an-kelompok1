@@ -7,35 +7,30 @@ use App\Http\Controllers\Api\ArticleController;
 use App\Http\Controllers\Api\MedicalRecordController;
 use App\Http\Controllers\Api\FeedbackController;
 
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+*/
 
 // Endpoint publik (tidak butuh token)
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
-    
-// Endpoint yang butuh autentikasi (contoh)
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
-});
-
-// --- Rute Artikel ---
-// Rute publik untuk semua pengguna
+// Endpoint publik(gaperlu login)
 Route::get('/articles', [ArticleController::class, 'index']);
 Route::get('/articles/{article}', [ArticleController::class, 'show']);
-Route::get('/article-categories', [ArticleController::class, 'getCategories']);
 
-// Rute yang memerlukan autentikasi (khusus admin)
-Route::middleware('auth:sanctum')->group(function () {
-    Route::post('/admin/articles', [ArticleController::class, 'store']);
-    Route::put('/admin/articles/{article}', [ArticleController::class, 'update']); // PUT untuk update keseluruhan
-    Route::delete('/admin/articles/{article}', [ArticleController::class, 'destroy']);
-    Route::post('/feedback', [FeedbackController::class, 'store']);
+// Endpoint yang butuh autentikasi
+// Group route yang memerlukan JWT
+Route::middleware('auth:api')->group(function () {
+    // Medical record   
+    Route::post('/medical-records', [MedicalRecordController::class, 'store']);
     
-    // Endpoint khusus untuk admin
-    Route::get('/admin/feedback', [FeedbackController::class, 'index']);
-    Route::delete('/admin/feedback/{feedback}', [FeedbackController::class, 'destroy']);
-    Route::apiResource('medical-records', MedicalRecordController::class);
+    
+    
+    
+    
+    
+    Route::post('/logout', [AuthController::class, 'logout']);
 });
