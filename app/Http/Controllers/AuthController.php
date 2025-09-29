@@ -40,6 +40,7 @@ class AuthController extends Controller
             'height_cm' => $request->height_cm,
             'weight_kg' => $request->weight_kg,
             'role' => 'user', // PENTING: Set role
+            'activity' => 'jarang', // Default activity level
         ]);
 
         // Buat token untuk user baru
