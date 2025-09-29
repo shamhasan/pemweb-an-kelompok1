@@ -16,7 +16,7 @@ return new class extends Migration
 
             // foreign key
             $table->foreignId('author_id')->constrained('users')->onDelete('cascade');
-            $table->foreignId('category_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('category_id')->constrained('article_categories')->onDelete('cascade');
 
             // Attribut title dan content
             $table->string('title');
