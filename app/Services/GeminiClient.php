@@ -29,7 +29,7 @@ class GeminiClient
             'contents' => $history,
             'generationConfig' => $config + [
                 'temperature'      => 0.7,
-                'maxOutputTokens'  => 512,
+                'maxOutputTokens'  => 1024,
                 'topP'             => 0.95,
                 'topK'             => 40,
                 'thinkingConfig'   => ['thinkingBudget' => 128],
