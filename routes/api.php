@@ -52,4 +52,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/recommendations', [RecommendationController::class, 'index']);
 
     Route::apiResource('medical-records', MedicalRecordController::class);
+
+
 });
