@@ -35,52 +35,33 @@ class MedicalRecordController extends Controller
         return response()->json($record, 201);
     }
 
-    /**
-     * Menampilkan detail satu riwayat kesehatan.
-     */
-    public function show(MedicalRecord $medicalRecord)
-    {
-        // Otorisasi: Pastikan user hanya bisa melihat data miliknya sendiri
-        if ($medicalRecord->user_id !== Auth::id()) {
-            return response()->json(['message' => 'Akses ditolak'], 403);
-        }
-
-        return response()->json($medicalRecord);
-    }
 
     /**
      * Mengupdate riwayat kesehatan.
      */
-    public function update(Request $request, MedicalRecord $medicalRecord)
-    {
-        // Otorisasi
-        if ($medicalRecord->user_id !== Auth::id()) {
-            return response()->json(['message' => 'Akses ditolak'], 403);
-        }
+    public function update(Request $request, MedicalRecord $id){
+    $validatedData = $request->validate([
+        'record_type' => 'sometimes|required|string|in:alergi,penyakit,operasi',
+        'name' => 'sometimes|required|string|max:255',
+        'description' => 'nullable|string',
+        'recorded_at' => 'sometimes|required|date',
+    ]);
 
-        $validatedData = $request->validate([
-            'record_type' => 'sometimes|required|string|in:alergi,penyakit,operasi',
-            'name' => 'sometimes|required|string|max:255',
-            'description' => 'nullable|string',
-            'recorded_at' => 'sometimes|required|date',
-        ]);
+    $id->update($validatedData);
 
-        $medicalRecord->update($validatedData);
+    return response()->json([
+        'message' => 'Data riwayat kesehatan berhasil diupdate',
+        'data' => $id
+    ], 200);
+}
 
-        return response()->json($medicalRecord);
-    }
 
     /**
      * Menghapus riwayat kesehatan.
      */
-    public function destroy(MedicalRecord $medicalRecord)
+    public function destroy(MedicalRecord $id)
     {
-        // Otorisasi
-        if ($medicalRecord->user_id !== Auth::id()) {
-            return response()->json(['message' => 'Akses ditolak'], 403);
-        }
-
-        $medicalRecord->delete();
+        $id->delete();
 
         return response()->json(['message' => 'Riwayat kesehatan berhasil dihapus'], 200);
     }

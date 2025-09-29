@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\ArticleController;
 use App\Http\Controllers\Api\MedicalRecordController;
 use App\Http\Controllers\Api\FeedbackController;
+use App\Http\Controllers\Api\UserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -24,9 +25,18 @@ Route::get('/articles/{article}', [ArticleController::class, 'show']);
 // Endpoint yang butuh autentikasi
 // Group route yang memerlukan JWT
 Route::middleware('auth:api')->group(function () {
+    //User Profile
+    Route::get('/profile', [UserController::class, 'getprofile']);
+    Route::put('/profile', [UserController::class, 'updateProfile']);
+
+
     // Medical record   
     Route::post('/medical-records', [MedicalRecordController::class, 'store']);    
-    
+    Route::get('/medical-records', [MedicalRecordController::class, 'index']);
+    Route::put('/medical-records/{id}', [MedicalRecordController::class, 'update']);
+    Route::delete('/medical-records/{id}', [MedicalRecordController::class, 'destroy']);
+
+    // Logout
     Route::post('/logout', [AuthController::class, 'logout']);
 });
 
