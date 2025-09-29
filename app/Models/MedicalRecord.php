@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class MedicalRecord extends Model
 {
+
+    use HasFactory;
+
     protected $fillable = [
         'user_id',
         'record_type',
@@ -14,4 +17,9 @@ class MedicalRecord extends Model
         'description',
         'recorded_at',
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }

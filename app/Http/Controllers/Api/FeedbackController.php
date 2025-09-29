@@ -42,7 +42,7 @@ class FeedbackController extends Controller
         $feedbacks = Feedback::with('user:id,name,email')->latest()->get();
         return response()->json($feedbacks);
     }
-    
+
     /**
      * Menghapus feedback.
      * (Akses khusus untuk Admin)

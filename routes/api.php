@@ -1,57 +1,40 @@
 <?php
 
+use App\Http\Controllers\AuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Api\ArticleController;
-use App\Http\Controllers\Api\NutritionLogController;
-use App\Http\Controllers\Api\FeedbackController;
-use App\Http\Controllers\Api\RecommendationController; // Ditambahkan
 use App\Http\Controllers\Api\MedicalRecordController;
 
-// =======================================================
-// == RUTE PUBLIK (BISA DIAKSES TANPA LOGIN)
-// =======================================================
+Route::get('/user', function (Request $request) {
+    return $request->user();
+})->middleware('auth:sanctum');
 
-// Autentikasi
+// Endpoint publik (tidak butuh token)
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
-// Artikel (Publik)
+    
+// Endpoint yang butuh autentikasi (contoh)
+Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+    return $request->user();
+});
+
+// --- Rute Artikel ---
+// Rute publik untuk semua pengguna
 Route::get('/articles', [ArticleController::class, 'index']);
 Route::get('/articles/{article}', [ArticleController::class, 'show']);
 Route::get('/article-categories', [ArticleController::class, 'getCategories']);
 
-
-// =======================================================
-// == RUTE TERPROTEKSI (WAJIB LOGIN & PAKAI TOKEN)
-// =======================================================
-
+// Rute yang memerlukan autentikasi (khusus admin)
 Route::middleware('auth:sanctum')->group(function () {
-
-    // Profil Pengguna & Logout
-    Route::get('/user', function (Request $request) {
-        return $request->user();
-    });
-    Route::post('/logout', [AuthController::class, 'logout']);
-
-    // Artikel (Admin)
     Route::post('/admin/articles', [ArticleController::class, 'store']);
-    Route::put('/admin/articles/{article}', [ArticleController::class, 'update']);
+    Route::put('/admin/articles/{article}', [ArticleController::class, 'update']); // PUT untuk update keseluruhan
     Route::delete('/admin/articles/{article}', [ArticleController::class, 'destroy']);
     Route::post('/feedback', [FeedbackController::class, 'store']);
     
     // Endpoint khusus untuk admin
     Route::get('/admin/feedback', [FeedbackController::class, 'index']);
     Route::delete('/admin/feedback/{feedback}', [FeedbackController::class, 'destroy']);
-
-    // Progress Nutrisi (User)
-    Route::apiResource('nutrition-logs', NutritionLogController::class);
-
-    // Rekomendasi (User) 
-    Route::get('/recommendations', [RecommendationController::class, 'index']);
-
     Route::apiResource('medical-records', MedicalRecordController::class);
-
-
 });

@@ -24,7 +24,7 @@ return new class extends Migration
             $table->string('image_url')->nullable();
 
             // status
-            $table->enum('status', ['published','draft']);
+            $table->enum('status', ['published', 'draft']);
 
             //timestamp
             $table->timestamps();

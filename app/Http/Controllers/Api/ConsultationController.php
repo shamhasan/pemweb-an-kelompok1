@@ -5,64 +5,227 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Consultation;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 
 class ConsultationController extends Controller
 {
-    // Menampilkan daftar sesi konsultasi milik user
-    public function index()
+    // Helper Functions
+
+    private function getAuthenticatedUserId(Request $request): int
     {
-        $consultations = Auth::user()->consultationsAsUser()->with('nutritionist')->latest()->get();
-        return response()->json($consultations);
+        $id = $request->user()?->id;
+        if (!$id) abort(401, 'User not authenticated');
+        return (int) $id;
     }
 
-    // Memulai sesi konsultasi baru
-    public function store(Request $request)
+    private function ensureOwner(Request $request, Consultation $consultation): void
     {
-        $request->validate([
-            'nutritionist_id' => 'required|exists:users,id'
+        $authId = $this->getAuthenticatedUserId($request);
+        abort_if($consultation->user_id !== $authId, 403, 'Forbidden');
+    }
+
+    public function index(Request $request)
+    {
+        $authId  = $this->getAuthenticatedUserId($request);
+
+        // Validasi query param sederhana
+        $v = Validator::make($request->all(), [
+            'status'   => 'sometimes|in:aktif,selesai',
+        ], [
+            'status.in' => 'Status tidak valid',
         ]);
 
-        $consultation = Auth::user()->consultationsAsUser()->create([
-            'nutritionist_id' => $request->nutritionist_id,
-            'status' => 'active',
+        if ($v->fails()) {
+            return response()->json([
+                'message' => 'Validasi gagal',
+                'errors'  => $v->errors(),
+            ], 422);
+        }
+
+        $validated = $v->validated();
+
+        $limit = max(1, min(50, 100));
+
+        $consultations = Consultation::query()
+            ->where('user_id', $authId)
+            ->when(
+                isset($validated['status']),
+                fn($q) => $q->where('status', $validated['status'])
+            )
+            ->with('user')
+            ->orderByDesc('started_at')
+            ->orderByDesc('id')
+            ->limit($limit)
+            ->get();
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => $consultations->isEmpty() ? 'Data konsultasi tidak ditemukan' : 'Data konsultasi berhasil diambil',
+            'data'    => $consultations,
+        ]);
+    }
+
+    public function store(Request $request)
+    {
+        $userId = $this->getAuthenticatedUserId($request);
+
+        $v = Validator::make($request->all(), [
+            'user_id'    => 'sometimes|required|integer|exists:users,id',
+            'status'     => 'sometimes|required|string|in:aktif,selesai',
+            'started_at' => 'sometimes|required|date',
+        ], [
+            'user_id.exists'   => 'User tidak ditemukan',
+            'user_id.integer'  => 'User ID harus berupa angka',
+            'status.in'        => 'Status tidak valid',
+            'started_at.date'  => 'Tanggal mulai tidak valid',
+        ]);
+
+        if ($v->fails()) {
+            return response()->json([
+                'message' => 'Validasi gagal',
+                'errors'  => $v->errors(),
+            ], 422);
+        }
+
+        $consultation = Consultation::create([
+            'user_id'    => $userId,
+            'status'     => 'aktif',
             'started_at' => now(),
         ]);
 
-        return response()->json($consultation, 201);
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Konsultasi berhasil dibuat',
+            'data'    => $consultation->load('user'),
+        ], 201);
     }
 
-    // Menampilkan detail dan semua pesan dari satu sesi konsultasi
-    public function show(Consultation $consultation)
+
+    public function show(Request $request, Consultation $consultation)
     {
-        // Otorisasi: pastikan user yang login adalah bagian dari konsultasi ini
-        if (Auth::id() !== $consultation->user_id && Auth::id() !== $consultation->nutritionist_id) {
-            return response()->json(['message' => 'Akses ditolak'], 403);
+        $this->ensureOwner($request, $consultation);
+
+        $v = Validator::make($request->all(), [
+            'limit' => 'sometimes|integer|min:1|max:200',
+        ]);
+        if ($v->fails()) {
+            return response()->json([
+                'message' => 'Validasi gagal',
+                'errors'  => $v->errors(),
+            ], 422);
         }
+        $limit = (int)($v->validated()['limit'] ?? 100);
 
-        // Ambil konsultasi beserta semua pesan dan pengirimnya
-        $data = $consultation->load(['messages.sender']);
+        $consultation->load('user');
 
-        return response()->json($data);
+        $messages = $consultation->messages()
+            ->orderBy('sent_at', 'asc')
+            ->orderBy('id', 'asc')
+            ->limit($limit)
+            ->get();
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => $messages->isEmpty() ? 'Tidak ada pesan' : 'Detail konsultasi berhasil diambil',
+            'data'    => [
+                'consultation' => $consultation,
+                'messages'     => $messages,
+            ],
+        ]);
     }
 
-    // Mengirim pesan ke dalam sebuah sesi konsultasi
-    public function sendMessage(Request $request, Consultation $consultation)
+    public function update(Request $request, Consultation $consultation)
     {
-        // Otorisasi
-        if (Auth::id() !== $consultation->user_id && Auth::id() !== $consultation->nutritionist_id) {
-            return response()->json(['message' => 'Akses ditolak'], 403);
+        $this->ensureOwner($request, $consultation);
+
+        $v = Validator::make($request->all(), [
+            'started_at' => 'sometimes|date|before_or_equal:now',
+            'status'     => 'sometimes|required|in:aktif,selesai',
+            'ended_at'   => 'prohibited', // server-controlled
+        ], [
+            'status.in'              => 'Status tidak valid',
+            'ended_at.prohibited'    => 'Field ended_at dikendalikan oleh server.',
+            'started_at.before_or_equal' => 'Tanggal mulai tidak boleh di masa depan.',
+        ]);
+
+        if ($v->fails()) {
+            return response()->json([
+                'message' => 'Validasi gagal',
+                'errors'  => $v->errors(),
+            ], 422);
         }
 
-        $validatedData = $request->validate([
-            'content' => 'required|string|min:1'
-        ]);
+        $changes = [];
 
-        $message = $consultation->messages()->create([
-            'sender_id' => Auth::id(),
-            'content' => $validatedData['content'],
-        ]);
+        if ($request->filled('started_at')) {
+            $changes['started_at'] = $request->date('started_at');
+        }
 
-        return response()->json($message, 201);
+        if ($request->filled('status')) {
+            $target = $request->string('status')->toString();
+
+            if ($target === 'selesai') {
+                if ($consultation->status !== 'selesai') {
+                    $changes['status']   = 'selesai';
+                    $changes['ended_at'] = now();
+                }
+            } elseif ($target === 'aktif') {
+                if ($consultation->status === 'selesai') {
+                    return response()->json([
+                        'status'  => 'error',
+                        'message' => 'Konsultasi yang sudah selesai tidak bisa dibuka kembali.'
+                    ], 409);
+                }
+            }
+        }
+
+        if (empty($changes)) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Tidak ada perubahan'
+            ], 409);
+        }
+
+        try {
+            $consultation->update($changes);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Terjadi kesalahan saat memperbarui konsultasi.',
+                'error'   => config('app.debug') ? $e->getMessage() : 'INTERNAL_ERROR',
+            ], 500);
+        }
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Konsultasi berhasil diperbarui.',
+            'data'    => $consultation->fresh()->load('user'),
+        ]);
+    }
+
+    public function destroy(Request $request, Consultation $consultation)
+    {
+        $this->ensureOwner($request, $consultation);
+
+        $consultation->delete();
+
+        return response()->noContent();
+    }
+
+    // Ini untuk menampilkan pesannya juga
+    public function activeConsultations(Request $request)
+    {
+        $authId = $this->getAuthenticatedUserId($request);
+
+        $consultations = Consultation::where('user_id', $authId)
+            ->where('status', 'aktif')
+            ->with('messages')
+            ->orderByDesc('started_at')
+            ->get();
+
+        return response()->json([
+            'message' => 'Konsultasi aktif berhasil diambil',
+            'data' => $consultations
+        ]);
     }
 }

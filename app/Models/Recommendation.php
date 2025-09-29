@@ -10,7 +10,11 @@ class Recommendation extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id', 'type', 'title', 'description', 'related_url'
+        'user_id',
+        'type',
+        'title',
+        'description',
+        'related_url'
     ];
 
     // Mendefinisikan bahwa rekomendasi ini dimiliki oleh satu User
