@@ -25,6 +25,7 @@ return new class extends Migration
             $table->integer('height_cm');
             $table->decimal('weight_kg');
             $table->enum('role', ['user','admin']);
+            $table->enum('activity', ['jarang', 'olahraga_ringan', 'olahraga_sedang', 'olahraga_berat', 'sangat_berat']);
 
             // informasi timestamp
             $table->rememberToken();

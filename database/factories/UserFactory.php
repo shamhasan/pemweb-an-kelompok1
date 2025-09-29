@@ -43,6 +43,7 @@ class UserFactory extends Factory
             'role'         => 'user',
             'created_at'   => $this->faker->dateTimeThisYear(),
             'updated_at'   => $this->faker->dateTimeThisYear(),
+            'activity'     => $this->faker->randomElement(['jarang', 'olahraga_ringan', 'olahraga_sedang', 'olahraga_berat', 'sangat_berat']),
         ];
     }
 
