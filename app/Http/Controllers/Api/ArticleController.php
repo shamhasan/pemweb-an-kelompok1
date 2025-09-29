@@ -60,10 +60,6 @@ class ArticleController extends Controller
     // Mengupdate artikel
     public function update(Request $request, Article $article)
     {
-        if ($request->user()->role !== 'admin') {
-            return response()->json(['message' => 'Akses ditolak'], 403);
-        }
-
         $validatedData = $request->validate([
             'title' => 'sometimes|required|string|max:255',
             'content' => 'sometimes|required|string',
@@ -79,10 +75,6 @@ class ArticleController extends Controller
     // Menghapus artikel
     public function destroy(Request $request, Article $article)
     {
-        if ($request->user()->role !== 'admin') {
-            return response()->json(['message' => 'Akses ditolak'], 403);
-        }
-
         $article->delete();
         return response()->json(['message' => 'Artikel berhasil dihapus'], 200);
     }

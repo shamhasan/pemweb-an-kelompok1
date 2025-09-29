@@ -43,6 +43,6 @@ Route::middleware('auth:api')->group(function () {
 // Endpoint khusus admin
 Route::group(['middleware' => ['auth:api', 'admin'], 'prefix' => 'admin'], function() {
     Route::post('/articles', [ArticleController::class, 'store']);
-        
-
+    Route::put('/articles/{article}', [ArticleController::class, 'update']);
+    Route::delete('/articles/{article}', [ArticleController::class, 'destroy']);
 });
