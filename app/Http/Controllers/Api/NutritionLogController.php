@@ -3,8 +3,13 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreNutritionLogRequest;
+use App\Http\Requests\UpdateNutritionLogRequest;
+use App\Http\Resources\NutritionLogResource;
 use App\Models\NutritionLog;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+
 
 
 class NutritionLogController extends Controller
@@ -12,70 +17,76 @@ class NutritionLogController extends Controller
     // Menampilkan semua catatan nutrisi milik user yang login
     public function index(Request $request)
     {
-        $query = $request->user()->nutritionLogs();
+        $user = $request->user();
 
-        // Filter berdasarkan tanggal jika ada parameter ?date=YYYY-MM-DD
+        $query = $user->nutritionLogs();
+
         if ($request->has('date')) {
             $query->whereDate('consumed_at', $request->date);
         }
 
         $logs = $query->latest('consumed_at')->paginate(15);
-        return response()->json($logs);
+
+        return NutritionLogResource::collection($logs);
     }
 
-    // Menyimpan catatan nutrisi baru
-    public function store(Request $request)
+    /**
+     * Menambah catatan nutrisi baru.
+     */
+    public function store(StoreNutritionLogRequest $request)
     {
-        $validatedData = $request->validate([
-            'food_name' => 'required|string|max:255',
-            'calories' => 'required|integer|min:0',
-            'protein_g' => 'required|numeric|min:0',
-            'carbs_g' => 'required|numeric|min:0',
-            'fat_g' => 'required|numeric|min:0',
-            'meal_type' => 'required|in:sarapan,makan_siang,makan_malam,camilan',
-            'consumed_at' => 'required|date',
-        ]);
+        $validatedData = $request->validated();
 
         $log = $request->user()->nutritionLogs()->create($validatedData);
 
-        return response()->json($log, 201);
+        return (new NutritionLogResource($log))
+                ->response()
+                ->setStatusCode(Response::HTTP_CREATED); // 201 Created
     }
 
-    // Menampilkan detail satu catatan
-    public function show(NutritionLog $nutritionLog)
+    /**
+     * Menampilkan detail satu catatan nutrisi.
+     */
+    public function show(Request $request, string $id)
     {
-        // Otorisasi: Pastikan log ini milik user yang sedang login
-        if ($nutritionLog->user_id !== auth()->id()) {
-            return response()->json(['message' => 'Akses ditolak'], 403);
+        $log = $request->user()->nutritionLogs()->find($id);
+
+        if (!$log) {
+            return response()->json(['message' => 'Nutrition log not found.'], Response::HTTP_NOT_FOUND);
         }
-        return response()->json($nutritionLog);
+
+        return new NutritionLogResource($log);
     }
 
-    // Mengupdate catatan nutrisi
-    public function update(Request $request, NutritionLog $nutritionLog)
+    /**
+     * Memperbarui detail catatan nutrisi.
+     */
+    public function update(UpdateNutritionLogRequest $request, string $id)
     {
-        if ($nutritionLog->user_id !== auth()->id()) {
-            return response()->json(['message' => 'Akses ditolak'], 403);
+        $log = $request->user()->nutritionLogs()->find($id);
+
+        if (!$log) {
+            return response()->json(['message' => 'Nutrition log not found.'], Response::HTTP_NOT_FOUND); // 404 Not Found
         }
 
-        $validatedData = $request->validate([
-            'food_name' => 'sometimes|required|string|max:255',
-            'calories' => 'sometimes|required|integer|min:0',
-            // ... (tambahkan validasi lain jika perlu)
-        ]);
+        $log->update($request->validated());
 
-        $nutritionLog->update($validatedData);
-        return response()->json($nutritionLog);
+        return new NutritionLogResource($log);
     }
 
-    // Menghapus catatan nutrisi
-    public function destroy(NutritionLog $nutritionLog)
+    /**
+     * Menghapus sebuah catatan nutrisi.
+     */
+    public function destroy(Request $request, string $id)
     {
-        if ($nutritionLog->user_id !== auth()->id()) {
-            return response()->json(['message' => 'Akses ditolak'], 403);
+        $log = $request->user()->nutritionLogs()->find($id);
+
+        if (!$log) {
+            return response()->json(['message' => 'Nutrition log not found.'], Response::HTTP_NOT_FOUND);
         }
 
-        $nutritionLog->delete();
-        return response()->json(['message' => 'Catatan berhasil dihapus']);
+        $log->delete();
+
+        return response()->json(null, Response::HTTP_NO_CONTENT); // 204 No Content
     }
 }
