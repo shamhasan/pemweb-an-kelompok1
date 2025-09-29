@@ -25,12 +25,14 @@ Route::get('/articles/{article}', [ArticleController::class, 'show']);
 // Group route yang memerlukan JWT
 Route::middleware('auth:api')->group(function () {
     // Medical record   
-    Route::post('/medical-records', [MedicalRecordController::class, 'store']);
-    
-    
-    
-    
-    
+    Route::post('/medical-records', [MedicalRecordController::class, 'store']);    
     
     Route::post('/logout', [AuthController::class, 'logout']);
+});
+
+// Endpoint khusus admin
+Route::group(['middleware' => ['auth:api', 'admin'], 'prefix' => 'admin'], function() {
+    Route::post('/articles', [ArticleController::class, 'store']);
+        
+
 });

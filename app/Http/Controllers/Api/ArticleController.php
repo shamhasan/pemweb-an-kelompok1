@@ -42,11 +42,6 @@ class ArticleController extends Controller
     // Membuat artikel baru
     public function store(Request $request)
     {
-        // Cek apakah user adalah admin
-        if ($request->user()->role !== 'admin') {
-            return response()->json(['message' => 'Akses ditolak'], 403);
-        }
-
         $validatedData = $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',

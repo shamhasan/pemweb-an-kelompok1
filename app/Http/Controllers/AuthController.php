@@ -20,7 +20,9 @@ class AuthController extends Controller
             'gender' => 'required|in:male,female',
             'height_cm' => 'required|integer|min:50|max:300',
             'weight_kg' => 'required|numeric|min:20|max:500',
+            'role'=>'nullable|in:user,admin',
             'activity' => 'nullable|in:jarang,olahraga_ringan,olahraga_sedang,olahraga_berat,sangat_berat',
+
         ]);
 
         if ($validator->fails()) {
@@ -36,7 +38,7 @@ class AuthController extends Controller
             'gender' => $request->gender,
             'height_cm' => $request->height_cm,
             'weight_kg' => $request->weight_kg,
-            'role' => 'user', // PENTING: Set role
+            'role' => $request->role ?? 'user', // PENTING: Set role
             'activity' => $request->activity ?? 'jarang',
         ]);
         // Untuk SPA ada baiknya langsung login setelah register
