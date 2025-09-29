@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Consultation extends Model
 {
-    use HasFactory;
+    use HasFactory; 
     protected $fillable = ['user_id', 'nutritionist_id', 'status', 'started_at', 'ended_at'];
 
     // Konsultasi ini milik user mana
