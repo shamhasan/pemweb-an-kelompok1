@@ -6,12 +6,9 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\ArticleController;
 use App\Http\Controllers\Api\MedicalRecordController;
 use App\Http\Controllers\Api\FeedbackController;
-<<<<<<< HEAD
 use App\Http\Controllers\Api\UserController;
-=======
 use App\Http\Controllers\Api\NutritionLogController;
 
->>>>>>> 59a41e8 (fitur progres nutrisi)
 
 /*
 |--------------------------------------------------------------------------
@@ -37,14 +34,11 @@ Route::middleware('auth:api')->group(function () {
 
     // Medical record   
     Route::post('/medical-records', [MedicalRecordController::class, 'store']);    
-<<<<<<< HEAD
     Route::get('/medical-records', [MedicalRecordController::class, 'index']);
     Route::put('/medical-records/{id}', [MedicalRecordController::class, 'update']);
     Route::delete('/medical-records/{id}', [MedicalRecordController::class, 'destroy']);
 
     // Logout
-=======
->>>>>>> 59a41e8 (fitur progres nutrisi)
     Route::post('/logout', [AuthController::class, 'logout']);
 
     // Progres Nutrisi
