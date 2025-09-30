@@ -15,9 +15,7 @@ class MessageController extends Controller
     /** ========= Helpers ========= */
     private function authId(Request $request): int
     {
-        $id = $request->user()?->id;
-        if (!$id) abort(401, 'User not authenticated');
-        return (int) $id;
+        return (int) $request->user()->id;
     }
 
     private function ensureOwner(Request $request, Consultation $consultation): void
@@ -31,8 +29,7 @@ class MessageController extends Controller
     public function index(Request $request)
     {
         $v = Validator::make($request->all(), [
-            'limit'          => 'sometimes|integer|min:1|max:100',
-            'sender_type'    => 'sometimes|in:user,ai',
+            'sender_type'     => 'sometimes|in:user,ai',
             'consultation_id' => 'sometimes|integer|exists:consultations,id',
         ]);
 
@@ -44,39 +41,29 @@ class MessageController extends Controller
         }
         $validated = $v->validated();
 
-        $authId  = $this->authId($request);
-        $limit   = (int)($validated['limit'] ?? 50);
-        $cid     = isset($validated['consultation_id']) ? (int)$validated['consultation_id'] : null;
+        $cid = $validated['consultation_id'] ?? null;
 
         if ($cid) {
-            Consultation::where('id', $cid)
-                ->where('user_id', $authId)
-                ->select('id')
-                ->firstOrFail();
+            Consultation::findOrFail($cid);
         }
 
         $messages = Message::query()
-            ->when(
-                !$cid,
-                fn($q) =>
-                $q->whereHas('consultation', fn($c) => $c->where('user_id', $authId))
-            )
             ->when($cid, fn($q) => $q->where('consultation_id', $cid))
             ->when(
                 isset($validated['sender_type']),
                 fn($q) => $q->where('sender_type', $validated['sender_type'])
             )
-            ->with('consultation')
+            ->with(['consultation.user'])
             ->orderBy('sent_at', 'asc')
             ->orderBy('id', 'asc')
-            ->limit($limit)
             ->get();
 
         return response()->json([
             'status'  => 'success',
-            'message' => $messages->isEmpty() ? 'Tidak ada pesan ditemukan' : 'Pesan berhasil diambil',
+            'message' => $messages->isEmpty() ? 'Tidak ada pesan ditemukan' : 'Semua pesan berhasil diambil',
             'data'    => $messages,
-        ], 200);
+            'meta'    => ['count' => $messages->count()],
+        ]);
     }
 
     public function store(Request $request, GeminiClient $gemini)
@@ -159,10 +146,11 @@ class MessageController extends Controller
 
         $v = Validator::make($request->all(), [
             'content'     => 'required|string|min:1|max:2000',
-            'sent_at'     => 'sometimes|date',
+            'sent_at'     => 'prohibited',
             'sender_type' => 'prohibited',
         ], [
             'sender_type.prohibited' => 'Tipe pengirim tidak bisa diubah',
+            'sent_at.prohibited'     => 'Waktu pengiriman tidak bisa diubah',
         ]);
 
         if ($v->fails()) {
@@ -182,9 +170,8 @@ class MessageController extends Controller
         ]);
     }
 
-    public function destroy(Request $request, Message $message)
+    public function destroy(Message $message)
     {
-        $this->ensureOwner($request, $message->consultation);
         $message->delete();
 
         return response()->noContent();
