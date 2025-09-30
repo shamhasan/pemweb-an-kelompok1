@@ -228,7 +228,10 @@ class ConsultationController extends Controller
 
         $consultation->delete();
 
-        return response()->noContent();
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Konsultasi berhasil dihapus.'
+        ]);
     }
 
     // Ini untuk menampilkan pesannya juga

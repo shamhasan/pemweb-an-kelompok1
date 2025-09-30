@@ -174,7 +174,10 @@ class MessageController extends Controller
     {
         $message->delete();
 
-        return response()->noContent();
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Pesan berhasil dihapus.'
+        ]);
     }
 
     private function generateAIResponse(Consultation $consultation, GeminiClient $gemini): Message
