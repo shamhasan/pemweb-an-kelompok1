@@ -159,13 +159,13 @@ class ConsultationController extends Controller
         $this->ensureOwner($request, $consultation);
 
         $v = Validator::make($request->all(), [
-            'status'     => 'sometimes|required|in:aktif,selesai',
+            'user_id'    => 'prohibited',
+            'status'     => 'prohibited',
             'started_at' => 'prohibited',
-            'ended_at'   => 'prohibited', // server-controlled
         ], [
-            'status.in'              => 'Status tidak valid',
-            'ended_at.prohibited'    => 'Field ended_at dikendalikan oleh server.',
-            'started_at.prohibited'  => 'Field started_at dikendalikan oleh server.',
+            'user_id.prohibited'    => 'Field user_id dikendalikan oleh server.',
+            'status.prohibited'     => 'Field status dikendalikan oleh server.',
+            'started_at.prohibited' => 'Field started_at dikendalikan oleh server.',
         ]);
 
         if ($v->fails()) {

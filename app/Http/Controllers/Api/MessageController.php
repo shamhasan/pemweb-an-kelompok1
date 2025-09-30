@@ -72,13 +72,15 @@ class MessageController extends Controller
 
         $v = Validator::make($request->all(), [
             'consultation_id' => 'required|integer|exists:consultations,id',
-            'content'         => 'required|string|min:1|max:6000',
-            'sender_type'     => 'sometimes|in:user',
+            'content'         => ['required', 'string', 'regex:/\S/', 'max:6000'], // harus ada non-whitespace
+            'sender_type'     => 'prohibited', // server-controlled
         ], [
             'consultation_id.required' => 'ID konsultasi wajib diisi',
             'consultation_id.exists'   => 'Konsultasi tidak ditemukan',
             'content.required'         => 'Pesan tidak boleh kosong',
+            'content.regex'            => 'Pesan tidak boleh hanya spasi/kosong',
             'content.max'              => 'Pesan terlalu panjang (maksimal 6000 karakter)',
+            'sender_type.prohibited'   => 'Field sender_type dikendalikan oleh server',
         ]);
 
         if ($v->fails()) {
@@ -100,7 +102,7 @@ class MessageController extends Controller
         $userMsg = Message::create([
             'consultation_id' => $consultation->id,
             'sender_type'     => 'user',
-            'content'         => (string)$validated['content'],
+            'content'         => trim((string)$validated['content']),
             'sent_at'         => now(),
         ]);
 
