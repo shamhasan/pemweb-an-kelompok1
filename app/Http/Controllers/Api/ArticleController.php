@@ -17,7 +17,7 @@ class ArticleController extends Controller
         $articles = Article::where('status', 'published')
             ->with(['category', 'author']) // Eager loading untuk relasi
             ->latest() // Urutkan dari yang terbaru
-            ->paginate(10); // Paginasi
+            ->paginate(1); // Paginasi
         return response()->json($articles);
     }
 
