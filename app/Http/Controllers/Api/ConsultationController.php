@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Consultation;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -13,9 +14,7 @@ class ConsultationController extends Controller
 
     private function getAuthenticatedUserId(Request $request): int
     {
-        $id = $request->user()?->id;
-        if (!$id) abort(401, 'User not authenticated');
-        return (int) $id;
+        return (int) $request->user()->id;
     }
 
     private function ensureOwner(Request $request, Consultation $consultation): void
@@ -26,7 +25,6 @@ class ConsultationController extends Controller
 
     public function index(Request $request)
     {
-        $authId  = $this->getAuthenticatedUserId($request);
 
         // Validasi query param sederhana
         $v = Validator::make($request->all(), [
@@ -47,7 +45,6 @@ class ConsultationController extends Controller
         $limit = max(1, min(50, 100));
 
         $consultations = Consultation::query()
-            ->where('user_id', $authId)
             ->when(
                 isset($validated['status']),
                 fn($q) => $q->where('status', $validated['status'])
@@ -62,6 +59,7 @@ class ConsultationController extends Controller
             'status'  => 'success',
             'message' => $consultations->isEmpty() ? 'Data konsultasi tidak ditemukan' : 'Data konsultasi berhasil diambil',
             'data'    => $consultations,
+            'meta'    => ['count' => $consultations->count()]
         ]);
     }
 
@@ -87,11 +85,33 @@ class ConsultationController extends Controller
             ], 422);
         }
 
-        $consultation = Consultation::create([
-            'user_id'    => $userId,
-            'status'     => 'aktif',
-            'started_at' => now(),
-        ]);
+        $alreadyActive = Consultation::query()
+            ->where('user_id', $userId)
+            ->where('status', 'aktif')
+            ->exists();
+
+        if ($alreadyActive) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Anda sudah memiliki konsultasi aktif. Selesaikan konsultasi tersebut sebelum memulai yang baru.'
+            ], 409);
+        }
+
+        try {
+            $consultation = Consultation::create([
+                'user_id'    => $userId,
+                'status'     => 'aktif',
+                'started_at' => now(),
+            ]);
+        } catch (QueryException $e) {
+            // Menghindari race db transaction
+            if ($e->getCode() === '23000') {
+                return response()->json([
+                    'message' => 'Anda sudah memiliki konsultasi aktif.'
+                ], 409);
+            }
+            throw $e;
+        }
 
         return response()->json([
             'status'  => 'success',
@@ -139,13 +159,13 @@ class ConsultationController extends Controller
         $this->ensureOwner($request, $consultation);
 
         $v = Validator::make($request->all(), [
-            'started_at' => 'sometimes|date|before_or_equal:now',
             'status'     => 'sometimes|required|in:aktif,selesai',
+            'started_at' => 'prohibited',
             'ended_at'   => 'prohibited', // server-controlled
         ], [
             'status.in'              => 'Status tidak valid',
             'ended_at.prohibited'    => 'Field ended_at dikendalikan oleh server.',
-            'started_at.before_or_equal' => 'Tanggal mulai tidak boleh di masa depan.',
+            'started_at.prohibited'  => 'Field started_at dikendalikan oleh server.',
         ]);
 
         if ($v->fails()) {
@@ -203,9 +223,8 @@ class ConsultationController extends Controller
         ]);
     }
 
-    public function destroy(Request $request, Consultation $consultation)
+    public function destroy(Consultation $consultation)
     {
-        $this->ensureOwner($request, $consultation);
 
         $consultation->delete();
 
