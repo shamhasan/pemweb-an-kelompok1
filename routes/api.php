@@ -58,6 +58,8 @@ Route::middleware('auth:api')->group(function () {
 
     Route::post('/messages', [MessageController::class, 'store']);
     Route::patch('/messages/{message}', [MessageController::class, 'update']);
+
+    Route::post('/feedbacks', [FeedbackController::class, 'store']);
 });
 
 // Endpoint khusus admin
@@ -75,4 +77,9 @@ Route::group(['middleware' => ['auth:api', 'admin'], 'prefix' => 'admin'], funct
     Route::get('/messages/{message}', [MessageController::class, 'show']);
     Route::put('/messages/{message}', [MessageController::class, 'update']);
     Route::delete('/messages/{message}', [MessageController::class, 'destroy']);
+
+    // Feedback
+    Route::get('/feedbacks', [FeedbackController::class, 'index']);
+    Route::delete('/feedbacks/{id}', [FeedbackController::class, 'destroy']);
+    Route::delete('/feedbacks', [FeedbackController::class, 'destroyAll']); 
 });
