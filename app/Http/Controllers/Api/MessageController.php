@@ -147,7 +147,7 @@ class MessageController extends Controller
         $this->ensureOwner($request, $message->consultation);
 
         $v = Validator::make($request->all(), [
-            'content'     => 'required|string|min:1|max:2000',
+            'content'     => ['required', 'string', 'regex:/\S/', 'max:6000'],
             'sent_at'     => 'prohibited',
             'sender_type' => 'prohibited',
         ], [
