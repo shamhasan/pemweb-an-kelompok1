@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\MedicalRecordController;
 use App\Http\Controllers\Api\FeedbackController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\NutritionLogController;
+use App\Http\Controllers\Api\RecommendationController;
 
 
 /*
@@ -32,9 +33,10 @@ Route::middleware('auth:api')->group(function () {
     //User Profile
     Route::get('/profile', [UserController::class, 'getprofile']);
     Route::put('/profile', [UserController::class, 'updateProfile']);
+    // Route Rekomendasi Kalori
+    Route::get('/recommendation/calories', [RecommendationController::class, 'getCalorieRecommendation']);
 
-
-    // Medical record   
+    // Medical record
     Route::post('/medical-records', [MedicalRecordController::class, 'store']);
     Route::get('/medical-records', [MedicalRecordController::class, 'index']);
     Route::put('/medical-records/{id}', [MedicalRecordController::class, 'update']);
