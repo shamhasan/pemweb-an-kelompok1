@@ -68,14 +68,13 @@ class ConsultationController extends Controller
         $userId = $this->getAuthenticatedUserId($request);
 
         $v = Validator::make($request->all(), [
-            'user_id'    => 'sometimes|required|integer|exists:users,id',
-            'status'     => 'sometimes|required|string|in:aktif,selesai',
-            'started_at' => 'sometimes|required|date',
+            'user_id'    => 'prohibited',
+            'status'     => 'prohibited',
+            'started_at' => 'prohibited',
         ], [
-            'user_id.exists'   => 'User tidak ditemukan',
-            'user_id.integer'  => 'User ID harus berupa angka',
-            'status.in'        => 'Status tidak valid',
-            'started_at.date'  => 'Tanggal mulai tidak valid',
+            'user_id.prohibited'    => 'Field user_id dikendalikan oleh server.',
+            'status.prohibited'     => 'Field status dikendalikan oleh server.',
+            'started_at.prohibited' => 'Field started_at dikendalikan oleh server.',
         ]);
 
         if ($v->fails()) {
