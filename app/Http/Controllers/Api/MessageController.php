@@ -18,10 +18,16 @@ class MessageController extends Controller
         return (int) $request->user()->id;
     }
 
+    private function getUserRole(Request $request): string
+    {
+        return (string) $request->user()->role;
+    }
+
     private function ensureOwner(Request $request, Consultation $consultation): void
     {
         $authId = $this->authId($request);
-        abort_if($consultation->user_id !== $authId, 403, 'Forbidden');
+        $userRole = $this->getUserRole($request);
+        abort_if($consultation->user_id !== $authId && $userRole !== 'admin', 403, 'Forbidden');
     }
 
     /** ========= Actions ========= */
@@ -147,7 +153,7 @@ class MessageController extends Controller
         $this->ensureOwner($request, $message->consultation);
 
         $v = Validator::make($request->all(), [
-            'content'     => 'required|string|min:1|max:2000',
+            'content'     => ['required', 'string', 'regex:/\S/', 'max:6000'],
             'sent_at'     => 'prohibited',
             'sender_type' => 'prohibited',
         ], [

@@ -17,10 +17,16 @@ class ConsultationController extends Controller
         return (int) $request->user()->id;
     }
 
+    private function getUserRole(Request $request): string
+    {
+        return (string) $request->user()->role;
+    }
+
     private function ensureOwner(Request $request, Consultation $consultation): void
     {
         $authId = $this->getAuthenticatedUserId($request);
-        abort_if($consultation->user_id !== $authId, 403, 'Forbidden');
+        $userRole = $this->getUserRole($request);
+        abort_if($consultation->user_id !== $authId && $userRole !== 'admin', 403, 'Forbidden');
     }
 
     public function index(Request $request)
