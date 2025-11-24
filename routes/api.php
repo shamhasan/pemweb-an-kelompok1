@@ -55,6 +55,7 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/consultations', [ConsultationController::class, 'store']);
     Route::patch('/consultations/{consultation}', [ConsultationController::class, 'update']);
     Route::get('/consultations/{consultation}', [ConsultationController::class, 'show']);
+    Route::get('/consultations/me/active', [ConsultationController::class, 'activeForUser']);
 
     Route::post('/messages', [MessageController::class, 'store']);
     Route::patch('/messages/{message}', [MessageController::class, 'update']);
@@ -81,5 +82,5 @@ Route::group(['middleware' => ['auth:api', 'admin'], 'prefix' => 'admin'], funct
     // Feedback
     Route::get('/feedbacks', [FeedbackController::class, 'index']);
     Route::delete('/feedbacks/{id}', [FeedbackController::class, 'destroy']);
-    Route::delete('/feedbacks', [FeedbackController::class, 'destroyAll']); 
+    Route::delete('/feedbacks', [FeedbackController::class, 'destroyAll']);
 });

@@ -159,6 +159,23 @@ class ConsultationController extends Controller
         ]);
     }
 
+    public function activeForUser(Request $request)
+    {
+        $authId = $this->getAuthenticatedUserId($request);
+
+        $consultation = Consultation::where('user_id', $authId)
+            ->where('status', 'aktif')
+            ->with('messages')
+            ->first();
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => $consultation && $consultation->messages->isEmpty() ? 'Tidak ada pesan' : 'Detail konsultasi berhasil diambil',
+            'data' => $consultation,
+        ]);
+    }
+
+
     public function update(Request $request, Consultation $consultation)
     {
         $this->ensureOwner($request, $consultation);
