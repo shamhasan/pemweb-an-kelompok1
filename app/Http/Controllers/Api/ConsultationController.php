@@ -17,10 +17,16 @@ class ConsultationController extends Controller
         return (int) $request->user()->id;
     }
 
+    private function getUserRole(Request $request): string
+    {
+        return (string) $request->user()->role;
+    }
+
     private function ensureOwner(Request $request, Consultation $consultation): void
     {
         $authId = $this->getAuthenticatedUserId($request);
-        abort_if($consultation->user_id !== $authId, 403, 'Forbidden');
+        $userRole = $this->getUserRole($request);
+        abort_if($consultation->user_id !== $authId && $userRole !== 'admin', 403, 'Forbidden');
     }
 
     public function index(Request $request)
@@ -152,6 +158,23 @@ class ConsultationController extends Controller
             ],
         ]);
     }
+
+    public function activeForUser(Request $request)
+    {
+        $authId = $this->getAuthenticatedUserId($request);
+
+        $consultation = Consultation::where('user_id', $authId)
+            ->where('status', 'aktif')
+            ->with('messages')
+            ->first();
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => $consultation && $consultation->messages->isEmpty() ? 'Tidak ada pesan' : 'Detail konsultasi berhasil diambil',
+            'data' => $consultation,
+        ]);
+    }
+
 
     public function update(Request $request, Consultation $consultation)
     {
