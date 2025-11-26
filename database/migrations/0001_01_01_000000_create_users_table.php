@@ -23,11 +23,12 @@ return new class extends Migration
             $table->date('date_of_birth');
             $table->enum('gender', ['male','female']);
             $table->integer('height_cm');
-            $table->decimal('weight_kg');
+            $table->decimal('weight_kg', 8, 2);
             $table->enum('role', ['user','admin']);
             $table->enum('activity', ['jarang', 'olahraga_ringan', 'olahraga_sedang', 'olahraga_berat', 'sangat_berat']);
 
             // informasi timestamp
+            $table->string('photo_url')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

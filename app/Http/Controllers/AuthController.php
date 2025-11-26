@@ -20,7 +20,7 @@ class AuthController extends Controller
             'gender' => 'required|in:male,female',
             'height_cm' => 'required|integer|min:50|max:300',
             'weight_kg' => 'required|numeric|min:20|max:500',
-            'role'=>'nullable|in:user,admin',
+            'role' => 'nullable|in:user,admin',
             'activity' => 'nullable|in:jarang,olahraga_ringan,olahraga_sedang,olahraga_berat,sangat_berat',
 
         ]);
@@ -48,7 +48,7 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $credentials = $request->only('email', 'password');
-        if (! $token = Auth::guard('api')->attempt($credentials)) {
+        if (!$token = Auth::guard('api')->attempt($credentials)) {
             return response()->json(['message' => 'Unauthorized'], 401);
         }
         return $this->respondWithToken($token);
@@ -59,17 +59,22 @@ class AuthController extends Controller
             Auth::guard('api')->logout();
             return response()->json(['message' => 'Successfully logged out']);
         } catch (\Tymon\JWTAuth\Exceptions\JWTException $e) {
-            return response()->json(['error' => 'Failed to logout, token
-invalid or missing'], 401);
+            return response()->json([
+                'error' => 'Failed to logout, token
+invalid or missing'
+            ], 401);
         }
     }
 
     protected function respondWithToken($token, $status = 200)
     {
+        $user = Auth::guard('api')->user();
+
         return response()->json([
             'access_token' => $token,
             'token_type' => 'bearer',
-            'expires_in' => config('jwt.ttl') * 60
+            'expires_in' => config('jwt.ttl') * 60,
+            'user' => $user
         ], $status);
     }
 }
