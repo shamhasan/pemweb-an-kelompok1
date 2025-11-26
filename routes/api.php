@@ -12,28 +12,29 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\NutritionLogController;
 use App\Http\Controllers\Api\RecommendationController;
 
-
 /*
 |--------------------------------------------------------------------------
 | API Routes
 |--------------------------------------------------------------------------
 */
 
-// Endpoint publik (tidak butuh token)
+// Publik (tidak butuh token)
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
-
-// Endpoint publik(gaperlu login)
 Route::get('/articles', [ArticleController::class, 'index']);
 Route::get('/articles/{article}', [ArticleController::class, 'show']);
 
+// FEEDBACK (Tambahan Fix)
+Route::get('/feedbacks', [FeedbackController::class, 'index']); // GET semua feedback (public)
+
 // Endpoint yang butuh autentikasi
-// Group route yang memerlukan JWT
 Route::middleware('auth:api')->group(function () {
-    //User Profile
+
+    // User profile
     Route::get('/profile', [UserController::class, 'getprofile']);
-    Route::put('/profile', [UserController::class, 'updateProfile']);
-    // Route Rekomendasi Kalori
+    Route::post('/profile/update', [UserController::class, 'updateProfile']);
+
+    // Rekomendasi
     Route::get('/recommendation/calories', [RecommendationController::class, 'getCalorieRecommendation']);
 
     // Medical record
@@ -45,11 +46,11 @@ Route::middleware('auth:api')->group(function () {
     // Logout
     Route::post('/logout', [AuthController::class, 'logout']);
 
-    // Progres Nutrisi
-    Route::get('nutrition-logs', [NutritionLogController::class, 'index']);
-    Route::post('nutrition-logs', [NutritionLogController::class, 'store']);
-    Route::put('nutrition-logs/{id}', [NutritionLogController::class, 'update']);
-    Route::delete('nutrition-logs/{id}', [NutritionLogController::class, 'destroy']);
+    // Progress Nutrisi
+    Route::get('/nutrition-logs', [NutritionLogController::class, 'index']);
+    Route::post('/nutrition-logs', [NutritionLogController::class, 'store']);
+    Route::put('/nutrition-logs/{id}', [NutritionLogController::class, 'update']);
+    Route::delete('/nutrition-logs/{id}', [NutritionLogController::class, 'destroy']);
 
     // Konsultasi
     Route::post('/consultations', [ConsultationController::class, 'store']);
@@ -60,26 +61,31 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/messages', [MessageController::class, 'store']);
     Route::patch('/messages/{message}', [MessageController::class, 'update']);
 
+    // FEEDBACK (user create)
     Route::post('/feedbacks', [FeedbackController::class, 'store']);
 });
 
-// Endpoint khusus admin
+// ADMIN ROUTE
 Route::group(['middleware' => ['auth:api', 'admin'], 'prefix' => 'admin'], function () {
+
+    // Artikel
     Route::post('/articles', [ArticleController::class, 'store']);
     Route::put('/articles/{article}', [ArticleController::class, 'update']);
     Route::delete('/articles/{article}', [ArticleController::class, 'destroy']);
 
+    // Konsultasi
     Route::get('/consultations', [ConsultationController::class, 'index']);
     Route::put('/consultations/{consultation}', [ConsultationController::class, 'update']);
     Route::get('/consultations/active', [ConsultationController::class, 'activeConsultations']);
     Route::delete('/consultations/{consultation}', [ConsultationController::class, 'destroy']);
 
+    // Messages
     Route::get('/messages', [MessageController::class, 'index']);
     Route::get('/messages/{message}', [MessageController::class, 'show']);
     Route::put('/messages/{message}', [MessageController::class, 'update']);
     Route::delete('/messages/{message}', [MessageController::class, 'destroy']);
 
-    // Feedback
+    // Feedback Admin
     Route::get('/feedbacks', [FeedbackController::class, 'index']);
     Route::delete('/feedbacks/{id}', [FeedbackController::class, 'destroy']);
     Route::delete('/feedbacks', [FeedbackController::class, 'destroyAll']);

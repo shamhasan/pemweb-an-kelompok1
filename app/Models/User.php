@@ -34,7 +34,8 @@ class User extends Authenticatable implements JWTSubject
         'height_cm',
         'weight_kg',
         'role',
-        'activity'
+        'activity',
+        'photo_url'
     ];
 
     /**
