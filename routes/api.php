@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\MedicalRecordController;
 use App\Http\Controllers\Api\FeedbackController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\NutritionLogController;
+use App\Http\Controllers\Api\ArticleCategoryController;
 use App\Http\Controllers\Api\RecommendationController;
 
 
@@ -22,6 +23,9 @@ use App\Http\Controllers\Api\RecommendationController;
 // Endpoint publik (tidak butuh token)
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::get('/article-categories', [ArticleCategoryController::class, 'index']);
+Route::get('/article-categories/{articleCategory}', [ArticleCategoryController::class, 'show']);
+
 
 // Endpoint publik(gaperlu login)
 Route::get('/articles', [ArticleController::class, 'index']);
@@ -68,6 +72,7 @@ Route::group(['middleware' => ['auth:api', 'admin'], 'prefix' => 'admin'], funct
     Route::post('/articles', [ArticleController::class, 'store']);
     Route::put('/articles/{article}', [ArticleController::class, 'update']);
     Route::delete('/articles/{article}', [ArticleController::class, 'destroy']);
+    Route::get('/articles', [ArticleController::class, 'index']);
 
     Route::get('/consultations', [ConsultationController::class, 'index']);
     Route::put('/consultations/{consultation}', [ConsultationController::class, 'update']);
@@ -78,6 +83,12 @@ Route::group(['middleware' => ['auth:api', 'admin'], 'prefix' => 'admin'], funct
     Route::get('/messages/{message}', [MessageController::class, 'show']);
     Route::put('/messages/{message}', [MessageController::class, 'update']);
     Route::delete('/messages/{message}', [MessageController::class, 'destroy']);
+
+    Route::post('/article-categories', [ArticleCategoryController::class, 'store']);
+    Route::put('/article-categories/{articleCategory}', [ArticleCategoryController::class, 'update']);
+    Route::delete('/article-categories/{articleCategory}', [ArticleCategoryController::class, 'destroy']);
+    Route::get('/article-categories', [ArticleCategoryController::class, 'index']);
+    Route::get('/article-categories/{articleCategory}', [ArticleCategoryController::class, 'show']);
 
     // Feedback
     Route::get('/feedbacks', [FeedbackController::class, 'index']);

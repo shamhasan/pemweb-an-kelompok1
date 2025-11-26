@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 class ArticleCategory extends Model
 {
     use HasFactory;
+        protected $fillable = ['name'];
+
     // Satu kategori bisa memiliki banyak artikel
     public function articles()
     {
