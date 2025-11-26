@@ -12,15 +12,28 @@ class ArticleController extends Controller
     // ENDPOINT UNTUK PENGGUNA UMUM
 
     // Menampilkan semua artikel yang sudah publish
-    public function index()
-    {
-        $articles = Article::where('status', 'published')
-            ->with(['category', 'author']) // Eager loading untuk relasi
-            ->latest() // Urutkan dari yang terbaru
-            ->paginate(10); // Paginasi
+    public function index(Request $request)
+{
+    // 1. Query Dasar (Relasi & Urutan)
+    $query = Article::with(['category', 'author'])->latest();
+
+    // 2. Cek apakah Frontend meminta SEMUA data (untuk Dashboard)
+    if ($request->has('all')) {
+        // Kalau request "all", kita TIDAK pakai filter 'published' 
+        // supaya Admin bisa lihat artikel yang masih Draft juga.
+        // Dan kita pakai get() bukan paginate()
+        $articles = $query->get(); 
+        
         return response()->json($articles);
     }
 
+    // 3. Default (Misal untuk Halaman Blog Pengunjung)
+    // Kalau tidak ada parameter "all", kita filter hanya yang Published
+    // Dan kita set pagination yang wajar, misal 10 per halaman (JANGAN 1)
+    $articles = $query->where('status', 'published')->paginate(10);
+    
+    return response()->json($articles);
+}
     // Menampilkan detail satu artikel
     public function show(Article $article)
     {
